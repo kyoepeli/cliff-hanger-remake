@@ -1,0 +1,30 @@
+{
+  "name": "cliff-hanger-remake",
+  "version": "1.0.0",
+  "description": "Cliff Hanger remake — physics precalc engine + game",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc",
+    "dev": "vite",
+    "preview": "vite preview",
+    "build:web": "vite build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "@types/three": "^0.186.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2"
+  },
+  "dependencies": {
+    "@dimforge/rapier3d-compat": "^0.21.0",
+    "three": "^0.186.1"
+  }
+}
