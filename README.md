@@ -61,10 +61,12 @@ npm run build:web  # production web build to dist/
 
 ### How to play the current prototype
 
-1. The hero starts already staked out on the cliff ledge, right next to
-   the boulder — no walking over required.
-2. Click the boulder to open the meter (click the ledge itself first if
-   you've wandered a step away and need to step back within reach).
+1. The hero starts already staked out on the cliff ledge, close to the
+   boulder — no walking over required. The ledge is a real, walkable
+   platform (and a real physics collider — the boulder actually rolls/
+   falls based on it, it's not just decoration).
+2. Click the boulder to open the meter (click elsewhere on the ledge first
+   if you've wandered off and need to come back within reach).
 3. Tap anywhere: the click that opened the meter started FORCE; the next tap
    locks force and starts AIM; the next tap locks aim and fires.
 4. Try a deliberately bad shot (force near zero) several times in a row and

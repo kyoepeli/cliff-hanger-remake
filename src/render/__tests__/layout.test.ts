@@ -18,13 +18,14 @@ function inFrame(p: Vector3, aspect: number, margin = 0.97) {
 }
 
 describe('static wide camera framing', () => {
-  it.each(ASPECTS)('keeps the ledge, the boulder and the whole road on screen at aspect %f', (aspect) => {
+  it.each(ASPECTS)('keeps the whole ledge footprint, the boulder and the whole road on screen at aspect %f', (aspect) => {
     const contraption = testFixtureScreen.objects.find((o) => o.isInteractive)!.position;
     const wp = testFixtureScreen.bandit.waypoints;
     const points = [
       new Vector3(contraption.x, contraption.y, contraption.z),
       new Vector3(wp[0].x, wp[0].y, wp[0].z), // bandit at the horizon
       new Vector3(wp[wp.length - 1].x, wp[wp.length - 1].y, wp[wp.length - 1].z), // front of the road
+      // all four corners of the (now much larger) ledge footprint
       new Vector3(WALK_BOUNDS.minX, LEDGE.topY, WALK_BOUNDS.minZ),
       new Vector3(WALK_BOUNDS.maxX, LEDGE.topY, WALK_BOUNDS.minZ),
       new Vector3(WALK_BOUNDS.minX, LEDGE.topY, WALK_BOUNDS.maxZ),
@@ -33,13 +34,20 @@ describe('static wide camera framing', () => {
     for (const p of points) expect(inFrame(p, aspect)).toBe(true);
   });
 
-  it('the boulder projects to a reasonably large, central-ish screen target (not a tiny distant speck)', () => {
+  it('the boulder projects to a reasonably central, visible screen target', () => {
     const cam = makeCamera(16 / 9);
     const contraption = testFixtureScreen.objects.find((o) => o.isInteractive)!.position;
-    const centerNdc = new Vector3(contraption.x, contraption.y, contraption.z).clone().project(cam);
-    // roughly within the middle two-thirds of the frame, not jammed in a corner/edge
-    expect(Math.abs(centerNdc.x)).toBeLessThan(0.6);
-    expect(Math.abs(centerNdc.y)).toBeLessThan(0.6);
+    const n = new Vector3(contraption.x, contraption.y, contraption.z).clone().project(cam);
+    expect(Math.abs(n.x)).toBeLessThan(0.6);
+    expect(Math.abs(n.y)).toBeLessThan(0.6);
+  });
+
+  it('the ledge is a substantial fraction of the frame width (room to actually walk around)', () => {
+    const cam = makeCamera(16 / 9);
+    const nearX = new Vector3(WALK_BOUNDS.maxX, LEDGE.topY, LEDGE.center.z).clone().project(cam).x;
+    const farX = new Vector3(WALK_BOUNDS.minX, LEDGE.topY, LEDGE.center.z).clone().project(cam).x;
+    // NDC spans [-1, 1] (width 2) — require the ledge to span a meaningful chunk of that.
+    expect(Math.abs(nearX - farX)).toBeGreaterThan(0.5);
   });
 });
 

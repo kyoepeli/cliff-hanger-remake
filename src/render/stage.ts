@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { CAMERA_POS } from './layout.js';
+import { LEDGE } from '../screens/test-fixture.js';
 
 /** Everything visual in the live (static wide camera) view. */
 export interface Stage {
@@ -78,44 +79,63 @@ export function buildStage(contraptionPos: THREE.Vector3, banditStart: THREE.Vec
     scene.add(shadowed(c));
   });
 
-  // rock cliff ledge the hero ambushes from and the boulder rests on — a
-  // few overlapping, irregularly-rotated chunks rather than a clean box, so
-  // it reads as an outcrop and not a pedestal.
+  // Rock cliff ledge: a real, roomy platform (matches the physics `ledge`
+  // collider in test-fixture.ts exactly — see LEDGE) built from several
+  // overlapping, irregularly-rotated chunks so it reads as an outcrop
+  // rather than a pedestal. The boulder itself launches from a short plank
+  // jutting out past the ledge's road-facing edge (see below) — clear of
+  // the flat top, which keeps its physics a clean projectile arc instead
+  // of a chaotic roll-off-a-sharp-corner.
   const cliffMat = new THREE.MeshStandardMaterial({ color: 0x8a5a3a, flatShading: true, roughness: 1 });
   const cliffDarkMat = new THREE.MeshStandardMaterial({ color: 0x6b4028, flatShading: true, roughness: 1 });
   const cliff = new THREE.Group();
-  const ledgeTopY = contraptionPos.y - 0.05;
+  const ledgeTopY = LEDGE.topY;
   const ledgeBase = -0.5; // matches the ground's top surface
   const ledgeHeight = ledgeTopY - ledgeBase;
+  const w2 = LEDGE.halfWidth * 2;
+  const d2 = LEDGE.halfDepth * 2;
   const chunks: Array<[number, number, number, number, number, number, THREE.Material]> = [
     // [w, h, d, offX, offZ, rotY, material] — offsets are relative to the ledge center
-    [2.6, ledgeHeight, 2.4, 0, 0, 0.06, cliffMat],
-    [2.1, ledgeHeight * 0.82, 2.0, -0.5, 0.5, -0.18, cliffMat],
-    [1.7, ledgeHeight * 0.65, 1.6, 0.6, -0.4, 0.22, cliffDarkMat],
-    [1.3, ledgeHeight * 0.5, 1.3, 0.3, 0.9, -0.3, cliffDarkMat],
+    [w2, ledgeHeight, d2, 0, 0, 0.05, cliffMat],
+    [w2 * 0.8, ledgeHeight * 0.82, d2 * 0.82, -w2 * 0.12, d2 * 0.18, -0.15, cliffMat],
+    [w2 * 0.6, ledgeHeight * 0.65, d2 * 0.6, w2 * 0.18, -d2 * 0.15, 0.2, cliffDarkMat],
+    [w2 * 0.45, ledgeHeight * 0.5, d2 * 0.45, w2 * 0.08, d2 * 0.28, -0.28, cliffDarkMat],
   ];
   for (const [w, h, d, ox, oz, ry, mat] of chunks) {
     const chunk = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
-    chunk.position.set(contraptionPos.x + ox, ledgeBase + h / 2, contraptionPos.z + oz);
+    chunk.position.set(LEDGE.center.x + ox, ledgeBase + h / 2, LEDGE.center.z + oz);
     chunk.rotation.y = ry;
     cliff.add(chunk);
   }
-  // a flat-ish cap so the hero and boulder visibly stand on solid ground
-  const cap = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.15, 2.1), cliffMat);
-  cap.position.set(contraptionPos.x, ledgeTopY - 0.02, contraptionPos.z);
+  // a flat-ish cap so the hero visibly stands on solid ground
+  const cap = new THREE.Mesh(new THREE.BoxGeometry(w2 - 0.1, 0.15, d2 - 0.1), cliffMat);
+  cap.position.set(LEDGE.center.x, ledgeTopY - 0.02, LEDGE.center.z);
   cliff.add(cap);
   // scree at the base for grounding
   const screeMat = new THREE.MeshStandardMaterial({ color: 0x5a3a26, flatShading: true, roughness: 1 });
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 10; i++) {
     const r = new THREE.Mesh(new THREE.DodecahedronGeometry(0.12 + Math.random() * 0.1), screeMat);
     r.position.set(
-      contraptionPos.x + (Math.random() - 0.5) * 3,
+      LEDGE.center.x + (Math.random() - 0.5) * w2,
       ledgeBase + 0.08,
-      contraptionPos.z + 1.3 + Math.random() * 0.8,
+      LEDGE.center.z + LEDGE.halfDepth + 0.4 + Math.random() * 0.8,
     );
     r.rotation.set(Math.random(), Math.random(), Math.random());
     cliff.add(r);
   }
+
+  // launch plank: juts from the ledge's road-facing edge out to the
+  // boulder's resting/launch point, so the boulder reads as poised at the
+  // very brink rather than floating unexplained in open air.
+  const edgeX = LEDGE.center.x + LEDGE.halfWidth;
+  const plankLen = contraptionPos.x - edgeX + 0.4;
+  const plank = new THREE.Mesh(
+    new THREE.BoxGeometry(plankLen, 0.12, 0.5),
+    new THREE.MeshStandardMaterial({ color: 0x4a3420, roughness: 0.9 }),
+  );
+  plank.position.set(edgeX + plankLen / 2 - 0.2, ledgeTopY - 0.06, contraptionPos.z);
+  cliff.add(plank);
+
   scene.add(shadowed(cliff));
 
   // boulder resting on the ledge, plus a bigger invisible click target
@@ -136,8 +156,8 @@ export function buildStage(contraptionPos: THREE.Vector3, banditStart: THREE.Vec
   projectile.visible = false;
   scene.add(shadowed(projectile));
 
-  // hero — starts already on the ledge, next to the boulder (staked out,
-  // not arriving from elsewhere)
+  // hero — starts already on the ledge, close to the boulder (staked out,
+  // not arriving from elsewhere), just off to the side of the launch plank
   const hero = new THREE.Group();
   const heroBody = new THREE.Mesh(
     new THREE.CapsuleGeometry(0.22, 0.6, 4, 10),
@@ -150,8 +170,8 @@ export function buildStage(contraptionPos: THREE.Vector3, banditStart: THREE.Vec
   );
   heroHat.position.y = 1.12;
   hero.add(heroBody, heroHat);
-  hero.position.set(contraptionPos.x - 0.9, ledgeTopY, contraptionPos.z + 0.7);
-  hero.rotation.y = Math.PI * 0.15;
+  hero.position.set(edgeX - 0.5, ledgeTopY, contraptionPos.z + 0.65);
+  hero.rotation.y = Math.PI * 0.2;
   scene.add(shadowed(hero));
 
   // bandit (origin at body center, matching the sim's bandit body)

@@ -8,9 +8,9 @@ import { PerspectiveCamera, Vector2, Vector3, Raycaster, Plane } from 'three';
  * derived from the window's aspect ratio so the same slice of the world is
  * visible left-to-right on any screen shape.
  */
-export const CAMERA_POS = new Vector3(0, 2.6, 8);
-export const CAMERA_TARGET = new Vector3(-0.6, 1.3, -4);
-export const HFOV_DEG = 75;
+export const CAMERA_POS = new Vector3(-1.9, 3.0, 9.5);
+export const CAMERA_TARGET = new Vector3(-1.9, 1.35, -5);
+export const HFOV_DEG = 86;
 const MAX_VFOV_DEG = 100;
 
 export function verticalFovDeg(aspect: number): number {
