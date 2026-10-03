@@ -61,39 +61,49 @@ npm run build:web  # production web build to dist/
 
 ### How to play the current prototype
 
-1. Click the ground to walk the hero (green) around.
-2. Walk toward the ledge on the left and click the boulder on top of it.
-   (Click it from far away and the hero walks over first.)
+1. The hero starts already staked out on the cliff ledge, right next to
+   the boulder — no walking over required.
+2. Click the boulder to open the meter (click the ledge itself first if
+   you've wandered a step away and need to step back within reach).
 3. Tap anywhere: the click that opened the meter started FORCE; the next tap
    locks force and starts AIM; the next tap locks aim and fires.
 4. Try a deliberately bad shot (force near zero) several times in a row and
    watch the take counter climb until the search finds a way.
 
-## Getting this into your GitHub
+## Publishing for playtesters (GitHub Pages)
 
-This project was scaffolded in a sandboxed environment without push access
-to GitHub. To get it into a real repo:
+Every push to `main` runs `.github/workflows/deploy.yml`: it type-checks,
+runs the tests, builds the web app and publishes it to GitHub Pages. If
+tests fail, nothing is deployed.
 
-```bash
-# 1. Unzip wherever you keep your projects, then:
-cd cliff-hanger-remake
-git init
-git add -A
-git commit -m "Initial scaffold: headless precalc/simulation module (step 1)"
+One-time setup:
 
-# 2. Create an empty repo on GitHub first (no README/gitignore/license —
-#    you already have these), then:
-git remote add origin git@github.com:kyoepeli/cliff-hanger-remake.git
-git branch -M main
-git push -u origin main
-```
+1. Create an empty repo on GitHub named `cliff-hanger-remake` (no README,
+   .gitignore or license — they already exist here). Pages on a free account
+   needs the repo to be **public**.
+2. From the project folder:
 
-(Swap the remote URL for HTTPS — `https://github.com/kyoepeli/cliff-hanger-remake.git`
-— if you don't have SSH keys set up for GitHub.)
+   ```bash
+   git init
+   git add -A
+   git commit -m "3D sim + static-camera prototype"
+   git branch -M main
+   git remote add origin https://github.com/kyoepeli/cliff-hanger-remake.git
+   git push -u origin main
+   ```
 
-From there, continuing the build (step 2 onward: Three.js rendering, input
-tiers, etc.) is exactly the kind of work suited to a **Claude Code**
-session with your GitHub account connected, since that surface has real
-write access to the repo and can run/iterate on the dev server directly.
-This chat can keep designing, writing modules, and testing them in the
-sandbox — but can't push on its own.
+3. In the repo on GitHub: **Settings → Pages → Build and deployment →
+   Source: GitHub Actions**. (Do this once; then re-run the workflow from the
+   **Actions** tab or push again.)
+4. After the workflow finishes (about a minute), the game is live at
+   `https://kyoepeli.github.io/cliff-hanger-remake/` — that's the link to
+   send to friends.
+
+After that, publishing an update is just `git add -A && git commit -m "…" && git push`.
+
+Notes:
+- Pushing needs GitHub authentication on your machine (an HTTPS personal
+  access token, or SSH keys with the `git@github.com:` remote URL instead).
+- The first load downloads about 1.5 MB (the physics engine ships inside the
+  worker), so give friends a moment on slow connections.
+- The repo is public, so the source is too.

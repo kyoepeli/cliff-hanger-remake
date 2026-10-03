@@ -78,13 +78,45 @@ export function buildStage(contraptionPos: THREE.Vector3, banditStart: THREE.Vec
     scene.add(shadowed(c));
   });
 
-  // ledge pedestal the boulder sits on (decorative; the sim only has ground)
-  const pedestal = new THREE.Mesh(
-    new THREE.BoxGeometry(1.6, contraptionPos.y - 0.35, 1.6),
-    new THREE.MeshStandardMaterial({ color: 0x8a5a3a, flatShading: true, roughness: 1 }),
-  );
-  pedestal.position.set(contraptionPos.x - 0.9, (contraptionPos.y - 0.35) / 2, contraptionPos.z);
-  scene.add(shadowed(pedestal));
+  // rock cliff ledge the hero ambushes from and the boulder rests on — a
+  // few overlapping, irregularly-rotated chunks rather than a clean box, so
+  // it reads as an outcrop and not a pedestal.
+  const cliffMat = new THREE.MeshStandardMaterial({ color: 0x8a5a3a, flatShading: true, roughness: 1 });
+  const cliffDarkMat = new THREE.MeshStandardMaterial({ color: 0x6b4028, flatShading: true, roughness: 1 });
+  const cliff = new THREE.Group();
+  const ledgeTopY = contraptionPos.y - 0.05;
+  const ledgeBase = -0.5; // matches the ground's top surface
+  const ledgeHeight = ledgeTopY - ledgeBase;
+  const chunks: Array<[number, number, number, number, number, number, THREE.Material]> = [
+    // [w, h, d, offX, offZ, rotY, material] — offsets are relative to the ledge center
+    [2.6, ledgeHeight, 2.4, 0, 0, 0.06, cliffMat],
+    [2.1, ledgeHeight * 0.82, 2.0, -0.5, 0.5, -0.18, cliffMat],
+    [1.7, ledgeHeight * 0.65, 1.6, 0.6, -0.4, 0.22, cliffDarkMat],
+    [1.3, ledgeHeight * 0.5, 1.3, 0.3, 0.9, -0.3, cliffDarkMat],
+  ];
+  for (const [w, h, d, ox, oz, ry, mat] of chunks) {
+    const chunk = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    chunk.position.set(contraptionPos.x + ox, ledgeBase + h / 2, contraptionPos.z + oz);
+    chunk.rotation.y = ry;
+    cliff.add(chunk);
+  }
+  // a flat-ish cap so the hero and boulder visibly stand on solid ground
+  const cap = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.15, 2.1), cliffMat);
+  cap.position.set(contraptionPos.x, ledgeTopY - 0.02, contraptionPos.z);
+  cliff.add(cap);
+  // scree at the base for grounding
+  const screeMat = new THREE.MeshStandardMaterial({ color: 0x5a3a26, flatShading: true, roughness: 1 });
+  for (let i = 0; i < 6; i++) {
+    const r = new THREE.Mesh(new THREE.DodecahedronGeometry(0.12 + Math.random() * 0.1), screeMat);
+    r.position.set(
+      contraptionPos.x + (Math.random() - 0.5) * 3,
+      ledgeBase + 0.08,
+      contraptionPos.z + 1.3 + Math.random() * 0.8,
+    );
+    r.rotation.set(Math.random(), Math.random(), Math.random());
+    cliff.add(r);
+  }
+  scene.add(shadowed(cliff));
 
   // boulder resting on the ledge, plus a bigger invisible click target
   const rockMat = new THREE.MeshStandardMaterial({ color: 0x6b5442, flatShading: true, roughness: 1 });
@@ -104,7 +136,8 @@ export function buildStage(contraptionPos: THREE.Vector3, banditStart: THREE.Vec
   projectile.visible = false;
   scene.add(shadowed(projectile));
 
-  // hero
+  // hero — starts already on the ledge, next to the boulder (staked out,
+  // not arriving from elsewhere)
   const hero = new THREE.Group();
   const heroBody = new THREE.Mesh(
     new THREE.CapsuleGeometry(0.22, 0.6, 4, 10),
@@ -117,7 +150,8 @@ export function buildStage(contraptionPos: THREE.Vector3, banditStart: THREE.Vec
   );
   heroHat.position.y = 1.12;
   hero.add(heroBody, heroHat);
-  hero.position.set(3, 0, 3);
+  hero.position.set(contraptionPos.x - 0.9, ledgeTopY, contraptionPos.z + 0.7);
+  hero.rotation.y = Math.PI * 0.15;
   scene.add(shadowed(hero));
 
   // bandit (origin at body center, matching the sim's bandit body)

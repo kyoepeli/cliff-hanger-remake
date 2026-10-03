@@ -1,9 +1,10 @@
 import * as THREE from 'three';
-import { makeCamera, setCameraAspect, screenToGround, clampToBounds } from './render/layout.js';
+import { makeCamera, setCameraAspect, screenToGround, clampToBounds, type WalkBounds } from './render/layout.js';
 import { buildStage } from './render/stage.js';
 import { SimClient } from './sim/client.js';
 import { EasyTierMeter, DEFAULT_EASY_CONFIG } from './input/easyTierMeter.js';
 import { getScreen } from './screens/index.js';
+import { LEDGE } from './screens/test-fixture.js';
 import type { PlayerInput, SearchResult, TrajectoryFrame } from './sim/types.js';
 
 // --- game data ---------------------------------------------------------------
@@ -15,7 +16,14 @@ const wp0 = screen.bandit.waypoints[0];
 const banditStart = new THREE.Vector3(wp0.x, wp0.y, wp0.z);
 const projectileId = `${contraption.id}:projectile`;
 
-const REACH = 2.2; // how close (on the ground) the hero must be to test an object
+const REACH = 1.6; // how close (on the ledge) the hero must be to test an object
+const WALK_Y = LEDGE.topY; // the hero's whole reachable area for this screen is the ledge
+const WALK_BOUNDS: WalkBounds = {
+  minX: LEDGE.center.x - LEDGE.halfWidth,
+  maxX: LEDGE.center.x + LEDGE.halfWidth,
+  minZ: LEDGE.center.z - LEDGE.halfDepth,
+  maxZ: LEDGE.center.z + LEDGE.halfDepth,
+};
 const HERO_SPEED = 3.2;
 const MIN_WINDUP = 0.7; // seconds; the wind-up also absorbs any search compute time
 
@@ -73,7 +81,7 @@ let lastHit = false;
 
 const setIdleStatus = () =>
   (hudStatus.textContent = simReady
-    ? 'click ground to walk · click the boulder on the ledge when you’re close'
+    ? 'click the boulder to test it · click the ledge to shift your footing'
     : 'loading physics engine…');
 
 // --- input ---------------------------------------------------------------------------
@@ -108,14 +116,14 @@ renderer.domElement.addEventListener('pointerdown', (ev) => {
       mode = 'meter';
       heroTarget = null;
     } else {
-      heroTarget = clampToBounds({ x: cPos.x + 1.6, z: cPos.z + 0.8 });
-      hudStatus.textContent = 'too far — walking over…';
+      heroTarget = clampToBounds({ x: cPos.x - 0.7, z: cPos.z + 0.5 }, WALK_BOUNDS);
+      hudStatus.textContent = 'stepping closer…';
     }
     return;
   }
 
-  const ground = screenToGround(ndc, camera);
-  if (ground) heroTarget = clampToBounds(ground);
+  const ground = screenToGround(ndc, camera, WALK_Y);
+  if (ground) heroTarget = clampToBounds(ground, WALK_BOUNDS);
 });
 
 function launch() {
